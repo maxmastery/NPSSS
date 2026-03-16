@@ -143,18 +143,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
              });
              setEnableQuota(newMode);
 
-             // 2. Logic: If turning ON -> Force Single Plan 'ห้องเรียนพิเศษ'
-             if (newMode === true) {
-                const totalQuota = plans.reduce((acc, p) => acc + p.quota, 0) || 36;
-                const singlePlan: StudyPlan[] = [{
-                    id: `PLAN-${Date.now()}`,
-                    name: 'ห้องเรียนพิเศษ',
-                    quota: totalQuota
-                }];
-                await onUpdatePlans(singlePlan);
-            }
-
-             // 3. Reset Data
+             // 2. Reset Data
              onResetData();
         }
         // CASE 3: Normal Editing (Plans/Subjects)
@@ -178,7 +167,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
 
   // --- Handlers for Temp Plans ---
   const handleAddTempPlan = () => {
-    if (enableQuota) return; // Prevent adding if restricted
     const newId = `PLAN-${Date.now()}`;
     setTempPlans([...tempPlans, { id: newId, name: 'แผนการเรียนใหม่', quota: 10 }]);
   };
@@ -188,7 +176,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   const handleDeleteTempPlan = (id: string) => {
-    if (enableQuota) return; // Prevent deleting if restricted
     setTempPlans(tempPlans.filter(p => p.id !== id));
   };
 
@@ -365,7 +352,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                       การเปิด/ปิด ฟังก์ชันนี้ จะทำให้ <strong>ข้อมูลนักเรียนทั้งหมดถูกลบ</strong> และแผนการเรียนจะถูกรีเซต
                   </p>
                   <p className="text-gray-500 leading-relaxed">
-                      เหมาะสำหรับการรับนักเรียนระดับชั้น ม.1 ที่มีแผนการเรียนเดียว
+                      เหมาะสำหรับการรับนักเรียนระดับชั้น ม.1
                   </p>
               </div>
            </div>
@@ -414,11 +401,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                   <div className="space-y-3 text-sm text-gray-600 pl-4 border-l-2 border-gray-100 ml-4">
                       <p className={`flex items-start gap-3 transition-opacity duration-300 ${enableQuota ? 'opacity-100' : 'opacity-40 grayscale'}`}>
                           <span className="font-bold bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
-                          <span>ระบบจะปรับแผนการเรียนเป็น <strong>"ห้องเรียนพิเศษ" (1 แผน)</strong> โดยอัตโนมัติ</span>
+                          <span>ระบบจะจัดสรรที่นั่งให้นักเรียนกลุ่ม <strong>"โควตา"</strong> เป็นลำดับแรก (เรียงตามคะแนน)</span>
                       </p>
                       <p className={`flex items-start gap-3 transition-opacity duration-300 ${enableQuota ? 'opacity-100' : 'opacity-40 grayscale'}`}>
                           <span className="font-bold bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
-                          <span>ระบบจะจัดสรรที่นั่งให้นักเรียนกลุ่ม <strong>"โควตา"</strong> เป็นลำดับแรก (เรียงตามคะแนน)</span>
+                          <span>นักเรียนกลุ่มโควตาสามารถเลือกและได้รับการจัดสรรในแผนการเรียนต่างๆ ตามลำดับคะแนน</span>
                       </p>
                       <p className={`flex items-start gap-3 transition-opacity duration-300 ${enableQuota ? 'opacity-100' : 'opacity-40 grayscale'}`}>
                           <span className="font-bold bg-black text-white w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
@@ -501,17 +488,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                 <div className="p-8 overflow-y-auto">
                     {editMode === 'PLANS' && (
                         <div className="space-y-5">
-                            {enableQuota && (
-                                <div className="bg-purple-50 border border-purple-100 p-4 rounded-xl flex items-start gap-3 mb-4">
-                                    <Lock className="w-5 h-5 text-purple-600 mt-0.5" />
-                                    <div>
-                                        <p className="text-sm font-bold text-purple-800">โหมดพิเศษเปิดใช้งานอยู่</p>
-                                        <p className="text-xs text-purple-600">
-                                            ในโหมดนี้ ระบบบังคับให้มีแผนการเรียนเดียว คุณสามารถแก้ไขชื่อและจำนวนรับได้ แต่ไม่สามารถเพิ่มหรือลบแผนได้
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
 
                             <table className="min-w-full divide-y divide-gray-100">
                                 <thead className="bg-gray-50">
@@ -544,8 +520,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                             <td className="px-5 py-3 text-right">
                                                 <button 
                                                     onClick={() => handleDeleteTempPlan(plan.id)} 
-                                                    disabled={enableQuota}
-                                                    className={`p-3 rounded-xl transition-colors ${enableQuota ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500 hover:bg-red-50'}`}
+                                                    className={`p-3 rounded-xl transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50`}
                                                 >
                                                     <Trash2 className="w-5 h-5" />
                                                 </button>
@@ -554,11 +529,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
                                     ))}
                                 </tbody>
                             </table>
-                            {!enableQuota && (
-                                <Button variant="outline" size="md" onClick={handleAddTempPlan} className="w-full border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 py-3 text-sm">
-                                    <Plus className="w-5 h-5 mr-2" /> เพิ่มแผนการเรียนใหม่
-                                </Button>
-                            )}
+                            <Button variant="outline" size="md" onClick={handleAddTempPlan} className="w-full border-dashed border-gray-300 text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 py-3 text-sm">
+                                <Plus className="w-5 h-5 mr-2" /> เพิ่มแผนการเรียนใหม่
+                            </Button>
                         </div>
                     )}
 

@@ -70,7 +70,7 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
   }, [subjects]);
 
   useEffect(() => {
-    // FIX: Auto-select if single plan (District Priority Mode)
+    // FIX: Auto-select if single plan (Single Plan Mode)
     if (studyPlans.length === 1) {
         setSelectedStreams([studyPlans[0].name]);
     } else if (studyPlans.length > 0 && selectedStreams.length === 0) {
@@ -489,7 +489,7 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
                         <CheckCircle className="w-6 h-6" />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ระบบระบุให้อัตโนมัติ (District Priority Mode)</p>
+                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ระบบระบุให้อัตโนมัติ (Single Plan Mode)</p>
                         <p className="text-lg font-bold text-gray-900">{studyPlans[0].name}</p>
                     </div>
                 </div>
@@ -878,7 +878,7 @@ export const EditStudentForm: React.FC<EditStudentFormProps> = ({ student, onSav
                         <CheckCircle className="w-6 h-6" />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ระบบระบุให้อัตโนมัติ (District Priority Mode)</p>
+                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">ระบบระบุให้อัตโนมัติ (Single Plan Mode)</p>
                         <p className="text-lg font-bold text-gray-900">{studyPlans[0].name}</p>
                     </div>
                 </div>

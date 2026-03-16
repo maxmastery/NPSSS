@@ -179,12 +179,6 @@ const ClassroomSelection: React.FC<ClassroomSelectionProps> = ({ onSelect, onLog
         defaultPlans = [
             { id: '1', name: 'ห้องเรียนพิเศษวิทยาศาสตร์-คณิตศาสตร์', quota: 36 }
         ];
-    } else if (enableQuota) {
-        // If Quota is enabled (even if Normal is selected, though usually they go together with Special),
-        // force single plan 'ห้องเรียนพิเศษ' to match SettingsPage logic
-        defaultPlans = [
-            { id: '1', name: 'ห้องเรียนพิเศษ', quota: 36 }
-        ];
     }
 
     const defaultSubjects = [
