@@ -190,14 +190,18 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
   const handleEditStudent = async (updatedStudent: Student, originalId?: string) => {
       if (isViewer) return;
 
-      const updatedList = students.map(s => s.id === (originalId || updatedStudent.id) ? updatedStudent : s);
+      // Ensure we update the correct student in the local state
+      const targetId = originalId || updatedStudent.id;
+      const updatedList = students.map(s => s.id === targetId ? updatedStudent : s);
       setStudents(updatedList);
       setIsSyncing(true);
       
       try {
+          // If the ID was changed during edit, delete the old one
           if (originalId && originalId !== updatedStudent.id) {
               await api.deleteStudent(classroom.id, originalId);
           }
+          // Save the updated student (this will update if ID exists, or create if new)
           await api.saveStudent(classroom.id, updatedStudent);
           storage.addLog(currentUser, 'EDIT_STUDENT', `Edited student: ${updatedStudent.id}`);
           refreshTimestamp();

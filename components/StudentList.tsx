@@ -565,8 +565,8 @@ const StudentList: React.FC<StudentListProps> = ({
         </div>
 
         {/* Table Container */}
-        <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-200/60 overflow-hidden print:overflow-visible print:shadow-none print:border-none flex flex-col">
-          <div className="flex-1 overflow-auto print:overflow-visible">
+        <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-200/60 overflow-hidden print:overflow-visible print:shadow-none print:border-none flex flex-col relative">
+          <div className="flex-1 overflow-auto print:overflow-visible absolute inset-0">
             <table className="min-w-[1200px] w-full divide-y divide-gray-100 print:min-w-0">
               <thead className="sticky top-0 z-20 shadow-sm">
                 <tr className="bg-[#1D1D1F] print:bg-white">
