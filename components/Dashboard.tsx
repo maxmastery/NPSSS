@@ -378,7 +378,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       {/* Sidebar Navigation */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-72 bg-[#1D1D1F] text-white transform transition-transform duration-300 ease-in-out flex flex-col no-print
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:sticky md:top-0 md:left-0 md:h-screen md:translate-x-0
       `}>
         {/* Brand Area */}
         <div className="p-6 md:p-8">
@@ -472,8 +472,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 flex flex-col h-[calc(100vh-64px)] md:h-screen overflow-hidden relative print:h-auto print:overflow-visible print:block">
-        <div className={`flex-1 min-w-0 p-6 md:p-10 scroll-smooth print:overflow-visible print:h-auto print:p-0 flex flex-col ${activeTab === 'LIST' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+      <main className="flex-1 min-w-0 flex flex-col min-h-[calc(100vh-64px)] md:min-h-screen relative print:h-auto print:overflow-visible print:block">
+        <div className={`flex-1 min-w-0 p-6 md:p-10 scroll-smooth print:overflow-visible print:h-auto print:p-0 flex flex-col`}>
           <div className="w-full max-w-[1920px] mx-auto flex-1 min-w-0 flex flex-col pb-10 print:pb-0">
             {showFullScreenLoader ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-pulse no-print">

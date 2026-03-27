@@ -401,7 +401,7 @@ const StudentList: React.FC<StudentListProps> = ({
 
   return (
     <>
-      <div className="flex flex-col flex-1 min-w-0 space-y-7 h-full">
+      <div className="flex flex-col flex-1 min-w-0 space-y-7">
         
         {/* Header Section */}
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 pt-6">
@@ -565,10 +565,9 @@ const StudentList: React.FC<StudentListProps> = ({
         </div>
 
         {/* Table Container */}
-        <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-200/60 overflow-hidden print:overflow-visible print:shadow-none print:border-none flex flex-col relative">
-          <div className="flex-1 overflow-auto print:overflow-visible absolute inset-0">
-            <table className="min-w-[1200px] w-full divide-y divide-gray-100 print:min-w-0">
-              <thead className="sticky top-0 z-20 shadow-sm">
+        <div className="bg-white rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-200/60 print:shadow-none print:border-none">
+          <table className="min-w-[1200px] w-full divide-y divide-gray-100 print:min-w-0">
+              <thead className="sticky top-[64px] md:top-0 z-20 shadow-sm">
                 <tr className="bg-[#1D1D1F] print:bg-white">
                   {!readOnly && (
                       <th scope="col" className="px-4 py-5 text-center w-10 print:hidden">
@@ -772,7 +771,6 @@ const StudentList: React.FC<StudentListProps> = ({
                 )}
               </tbody>
             </table>
-          </div>
         </div>
 
         {/* Pagination Controls */}
