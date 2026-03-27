@@ -111,36 +111,45 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
   }, [classroom.id, currentUpdatedAt]);
 
   const loadData = async () => {
-      setLoading(true);
       setError(null);
       setUpdateAvailable(false); // Clear banner on reload
+      
+      const cacheKey = `cached_dashboard_${classroom.id}`;
+      const cachedData = sessionStorage.getItem(cacheKey);
+      
+      if (cachedData) {
+          try {
+              const result = JSON.parse(cachedData);
+              if (result.students) setStudents(result.students);
+              if (result.plans) setStudyPlans(result.plans);
+              if (result.subjects) setExamSubjects(result.subjects);
+              if (result.criteria) setAdmissionCriteria(result.criteria);
+              if (result.updatedAt) setCurrentUpdatedAt(result.updatedAt);
+              setLoading(false); // Stop loading spinner immediately
+          } catch (e) {
+              console.error("Failed to parse cached dashboard data", e);
+              setLoading(true);
+          }
+      } else {
+          setLoading(true);
+      }
+
       try {
-          // Note: The API call needs to be updated to fetch CRITERIA as well.
-          // Since the API sends generic 'getDashboardData', we need to check if we can piggyback or need another call.
-          // For now, let's assume `getDashboardData` can return criteria if we modify api.ts, 
-          // OR we fetch settings separately.
-          // To keep it simple without changing `Code.gs` return structure too much, 
-          // let's assume `api.getDashboardData` returns generic settings array or we handle it in `api.ts`.
-          // *Correction*: api.ts `getDashboardData` returns specific fields. I'll need to fetch CRITERIA separately or rely on api.ts to handle it.
-          // Since I can't modify Code.gs easily to return extra fields in one go without breaking things, 
-          // I will assume standard settings loading.
-          // Actually, `getDashboardData` in Code.gs returns plans and subjects. I'll rely on a separate fetch or generic fetch for criteria if needed.
-          // BUT, to make this work seamlessly, I'll modify `api.ts` to include `criteria` in `getDashboardData` return, if possible.
-          // Since I cannot modify `Code.gs` structure for `getDashboardData` easily (it parses specific keys),
-          // I will use `api.getDashboardData` as base and maybe mock criteria or use default until fully implemented.
-          // Wait, the prompt allows modifying all files. I will update `api.ts` to fetch criteria.
-          
           const result = await api.getDashboardData(classroom.id);
           
           if (result.students) setStudents(result.students);
           if (result.plans) setStudyPlans(result.plans);
           if (result.subjects) setExamSubjects(result.subjects);
-          if (result.criteria) setAdmissionCriteria(result.criteria); // Assuming I update api.ts
+          if (result.criteria) setAdmissionCriteria(result.criteria); 
           if (result.updatedAt) setCurrentUpdatedAt(result.updatedAt);
+          
+          sessionStorage.setItem(cacheKey, JSON.stringify(result));
 
       } catch (e: any) {
           console.error("Failed to load dashboard data", e);
-          setError(e.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+          if (!cachedData) {
+              setError(e.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
+          }
       } finally {
           setLoading(false);
       }

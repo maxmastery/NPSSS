@@ -69,19 +69,36 @@ const ClassroomSelection: React.FC<ClassroomSelectionProps> = ({ onSelect, onLog
   };
 
   const loadClassrooms = async () => {
-    setLoading(true);
     setError(null);
     const config = storage.getConfig();
     if (!config.scriptUrl || !config.scriptUrl.startsWith('https://script.google.com')) {
         setLoading(false);
         return;
     }
+    
+    // Load from cache first for instant UI
+    const cachedData = sessionStorage.getItem('cached_classrooms');
+    if (cachedData) {
+        try {
+            setClassrooms(JSON.parse(cachedData));
+            setLoading(false); // Stop loading spinner immediately if we have cache
+        } catch (e) {
+            console.error("Failed to parse cached classrooms", e);
+            setLoading(true);
+        }
+    } else {
+        setLoading(true);
+    }
+
     try {
         const data = await api.getClassrooms();
         setClassrooms(data);
+        sessionStorage.setItem('cached_classrooms', JSON.stringify(data));
     } catch (error: any) {
         console.error("Failed to load classrooms", error);
-        setError(error.message);
+        if (!cachedData) {
+            setError(error.message);
+        }
     } finally {
         setLoading(false);
     }

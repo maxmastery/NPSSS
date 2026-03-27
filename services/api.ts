@@ -49,7 +49,7 @@ const sendPostRequest = async (action: string, data: any = {}) => {
         return jsonResponse;
     } catch (error: any) {
         // Suppress console error for background polling to reduce noise
-        if (action !== 'getClassroomTimestamp' && action !== 'getOnlineUsers' && action !== 'heartbeat') {
+        if (!['getClassroomTimestamp', 'getOnlineUsers', 'heartbeat', 'getEmojis', 'sendEmoji'].includes(action)) {
             console.error(`API Error (${action}):`, error);
         }
         
@@ -199,7 +199,7 @@ const api = {
     try {
       await sendPostRequest('sendEmoji', { senderId, senderName, receiverId, emoji });
     } catch (error) {
-      console.error('API Error (sendEmoji):', error);
+      // Silently fail
     }
   },
 
@@ -208,7 +208,7 @@ const api = {
       const result = await sendPostRequest('getEmojis', { userId });
       return Array.isArray(result?.data) ? result.data : [];
     } catch (error) {
-      console.error('API Error (getEmojis):', error);
+      // Silently fail for polling
       return [];
     }
   }

@@ -790,7 +790,7 @@ const StudentList: React.FC<StudentListProps> = ({
                                 </div>
                             )}
                             {student.isLocked && (
-                                <span className="text-yellow-500 italic font-bold text-sm drop-shadow-sm animate-pulse">Lock!</span>
+                                <span className="text-green-500 italic font-bold text-sm drop-shadow-sm animate-pulse">Lock!</span>
                             )}
                         </div>
                     </td>
