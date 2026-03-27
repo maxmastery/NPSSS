@@ -168,6 +168,7 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
     if (criteria?.enableQuota) {
         headers.push('Quota (โควตา)');
     }
+    headers.push('Lock (No/Lock)');
     studyPlans.forEach((_, i) => {
         headers.push(`Preference ${i+1} (อันดับ ${i+1})`);
     });
@@ -192,6 +193,7 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
     if (criteria?.enableQuota) {
         exampleRow.push('ไม่ใช่');
     }
+    exampleRow.push('No');
     studyPlans.forEach(p => {
         exampleRow.push(p.name);
     });
@@ -244,6 +246,8 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
             quotaCol = colIndex++;
         }
         
+        const lockCol = colIndex++;
+        
         const planStartCol = colIndex;
         const scoreStartCol = planStartCol + studyPlans.length;
 
@@ -274,8 +278,17 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
             let isQuota = false;
             if (quotaCol !== -1) {
                 const quotaVal = getVal(quotaCol);
-                if (quotaVal.includes('ใช่') || quotaVal.toLowerCase().includes('yes') || quotaVal.toLowerCase().includes('true')) {
+                if (quotaVal === 'ใช่' || quotaVal.toLowerCase() === 'yes' || quotaVal.toLowerCase() === 'true') {
                     isQuota = true;
+                }
+            }
+
+            // Parse Lock
+            let isLocked = false;
+            if (lockCol !== -1) {
+                const lockVal = getVal(lockCol);
+                if (lockVal.toLowerCase() === 'lock' || lockVal === 'ใช่' || lockVal.toLowerCase() === 'yes' || lockVal.toLowerCase() === 'true') {
+                    isLocked = true;
                 }
             }
 
@@ -297,6 +310,7 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
                 previousSchool,
                 residence,
                 isQuota,
+                isLocked,
                 preferredStreams, 
                 scores: extractedScores as any
             });
@@ -328,6 +342,7 @@ const DataEntry: React.FC<DataEntryProps> = ({ onAddStudents, studyPlans, subjec
           previousSchool,
           residence: residence as 'IN_DISTRICT' | 'OUT_DISTRICT',
           isQuota,
+          isLocked: false,
           preferredStreams: finalStreams, 
           scores: finalScores as any
         };
@@ -736,6 +751,7 @@ export const EditStudentForm: React.FC<EditStudentFormProps> = ({ student, onSav
           previousSchool,
           residence,
           isQuota,
+          isLocked: student.isLocked,
           preferredStreams: finalStreams,
           scores: finalScores as any
         };

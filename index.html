@@ -57,6 +57,74 @@
         background-color: rgba(0, 0, 0, 0.2);
       }
 
+      /* Glow effect for locked rows */
+      .locked-row-glow {
+        background-color: rgba(255, 215, 0, 0.08) !important;
+        animation: goldGlow 2.5s ease-in-out infinite alternate;
+        position: relative;
+        z-index: 10;
+      }
+
+      @keyframes goldGlow {
+        0% {
+          box-shadow: inset 0 0 5px 1px rgba(218, 165, 32, 0.1), 0 0 5px 1px rgba(218, 165, 32, 0.2);
+          outline: 1px solid rgba(218, 165, 32, 0.3);
+          outline-offset: -1px;
+        }
+        100% {
+          box-shadow: inset 0 0 15px 2px rgba(255, 215, 0, 0.4), 0 0 10px 2px rgba(255, 215, 0, 0.5);
+          outline: 2px solid rgba(255, 215, 0, 0.9);
+          outline-offset: -2px;
+        }
+      }
+
+      /* iOS-style toggle switch for lock */
+      .lock-toggle {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        width: 44px;
+        height: 24px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      
+      .lock-toggle-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+      }
+      
+      .lock-toggle-knob {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background-color: white;
+        border-radius: 50%;
+        transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      }
+      
+      .lock-toggle.locked .lock-toggle-bg {
+        background: linear-gradient(135deg, #FFD700, #DAA520);
+        box-shadow: 0 0 8px rgba(218, 165, 32, 0.6);
+      }
+      
+      .lock-toggle.locked .lock-toggle-knob {
+        transform: translateX(20px);
+      }
+      
+      .lock-toggle:not(.locked) .lock-toggle-bg {
+        background-color: #E5E7EB;
+      }
+
       /* --- Print Styles --- */
       @media print {
         @page {

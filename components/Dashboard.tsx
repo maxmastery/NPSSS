@@ -44,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Track last update locally to reflect changes immediately
@@ -173,6 +174,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       });
       
       setStudents(updatedList);
+      setIsSyncing(true);
       
       try {
           await api.saveStudents(classroom.id, newStudents);
@@ -180,6 +182,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('บันทึกข้อมูลไม่สำเร็จ');
+      } finally {
+          setIsSyncing(false);
       }
   };
 
@@ -188,9 +192,10 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
 
       const updatedList = students.map(s => s.id === (originalId || updatedStudent.id) ? updatedStudent : s);
       setStudents(updatedList);
+      setIsSyncing(true);
       
       try {
-          if (originalId) {
+          if (originalId && originalId !== updatedStudent.id) {
               await api.deleteStudent(classroom.id, originalId);
           }
           await api.saveStudent(classroom.id, updatedStudent);
@@ -198,6 +203,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('บันทึกการแก้ไขไม่สำเร็จ');
+      } finally {
+          setIsSyncing(false);
       }
   };
 
@@ -207,6 +214,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       const target = students.find(s => s.id === id);
       const updatedList = students.filter(s => s.id !== id);
       setStudents(updatedList);
+      setIsSyncing(true);
 
       try {
           await api.deleteStudent(classroom.id, id);
@@ -214,6 +222,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('ลบข้อมูลไม่สำเร็จ');
+      } finally {
+          setIsSyncing(false);
       }
   };
 
@@ -222,6 +232,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
 
       const updatedList = students.filter(s => !ids.includes(s.id));
       setStudents(updatedList);
+      setIsSyncing(true);
 
       try {
           await api.deleteStudents(classroom.id, ids);
@@ -231,6 +242,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           alert('ลบข้อมูลหลายรายการไม่สำเร็จ');
           // Revert on error? Ideally yes, but for now simple alert.
           loadData(); // Reload to sync
+      } finally {
+          setIsSyncing(false);
       }
   };
 
@@ -264,6 +277,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       // Optimistic update
       const previousStudents = [...students];
       setStudents([]);
+      setIsSyncing(true);
       
       try {
           // Get all IDs to delete
@@ -283,6 +297,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           // Revert optimistic update on error
           setStudents(previousStudents);
           alert('เกิดข้อผิดพลาดในการลบข้อมูลจากฐานข้อมูล กรุณาลองใหม่อีกครั้ง');
+      } finally {
+          setIsSyncing(false);
       }
   };
 
@@ -298,6 +314,16 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
   return (
     <div className="min-h-screen bg-[#F5F5F7] flex flex-col md:flex-row font-sans print:block print:bg-white print:h-auto">
       
+      {/* Background Sync Indicator */}
+      {isSyncing && (
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top-2 fade-in duration-300 no-print">
+              <div className="bg-white/90 backdrop-blur-md border border-gray-200 shadow-lg rounded-full px-4 py-2 flex items-center gap-3">
+                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+                  <span className="text-sm font-bold text-gray-700">กำลังซิงค์ข้อมูล...</span>
+              </div>
+          </div>
+      )}
+
       {/* Update Notification Banner */}
       {updateAvailable && (
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] animate-in slide-in-from-top-2 fade-in duration-300 w-full max-w-lg px-4 no-print">
@@ -442,9 +468,9 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-[calc(100vh-64px)] md:h-screen overflow-hidden relative print:h-auto print:overflow-visible print:block">
-        <div className="flex-1 overflow-y-auto p-6 md:p-10 scroll-smooth print:overflow-visible print:h-auto print:p-0">
-          <div className="w-full max-w-[1920px] mx-auto min-h-full pb-20 print:pb-0">
+      <main className="flex-1 min-w-0 flex flex-col h-[calc(100vh-64px)] md:h-screen overflow-hidden relative print:h-auto print:overflow-visible print:block">
+        <div className={`flex-1 min-w-0 p-6 md:p-10 scroll-smooth print:overflow-visible print:h-auto print:p-0 flex flex-col ${activeTab === 'LIST' ? 'overflow-hidden' : 'overflow-y-auto'}`}>
+          <div className="w-full max-w-[1920px] mx-auto flex-1 min-w-0 flex flex-col pb-10 print:pb-0">
             {showFullScreenLoader ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-400 animate-pulse no-print">
                     <Loader2 className="w-12 h-12 animate-spin mb-4" />
@@ -465,7 +491,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
             ) : (
                 <>
                     {activeTab === 'LIST' && (
-                        <div className="animate-fade-in print-container">
+                        <div className="animate-fade-in print-container flex-1 min-w-0 flex flex-col">
                             <StudentList 
                                 students={rankedStudents}
                                 studyPlans={studyPlans}

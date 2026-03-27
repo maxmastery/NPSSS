@@ -39,6 +39,7 @@ export interface Student {
   scores: Scores;
   residence?: 'IN_DISTRICT' | 'OUT_DISTRICT'; // New Field: ในเขตพื้นที่ / นอกเขตพื้นที่
   isQuota?: boolean; // New: Quota Status
+  isLocked?: boolean; // New: Lock Status
 }
 
 export interface RankedStudent extends Student {

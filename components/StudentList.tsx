@@ -139,14 +139,14 @@ const StudentList: React.FC<StudentListProps> = ({
   // Selection Logic
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-        // Select all currently visible (paginated)
+        // Select all filtered students
         const newSelected = new Set(selectedIds);
-        paginatedStudents.forEach(s => newSelected.add(s.id));
+        filteredStudents.forEach(s => newSelected.add(s.id));
         setSelectedIds(newSelected);
     } else {
-        // Deselect all currently visible
+        // Deselect all filtered students
         const newSelected = new Set(selectedIds);
-        paginatedStudents.forEach(s => newSelected.delete(s.id));
+        filteredStudents.forEach(s => newSelected.delete(s.id));
         setSelectedIds(newSelected);
     }
   };
@@ -239,6 +239,7 @@ const StudentList: React.FC<StudentListProps> = ({
         }
 
         columns.push(
+            { key: 'isLocked', width: 15, header: 'Lock' },
             { key: 'preferred', width: 35, header: 'แผนฯ ที่เลือก (อันดับ 1)' },
             { key: 'qualified', width: 35, header: 'แผนฯ ที่ได้' },
             { key: 'totalScore', width: 18, header: 'คะแนนรวม' },
@@ -292,6 +293,7 @@ const StudentList: React.FC<StudentListProps> = ({
                 firstName: student.firstName,
                 lastName: student.lastName,
                 previousSchool: student.previousSchool || '-',
+                isLocked: student.isLocked ? 'Lock' : 'No',
                 preferred: student.preferredStreams ? student.preferredStreams[0] : '-',
                 qualified: student.qualifiedStream || 'รอเรียก',
                 totalScore: student.totalScore,
@@ -399,7 +401,7 @@ const StudentList: React.FC<StudentListProps> = ({
 
   return (
     <>
-      <div className="space-y-7">
+      <div className="flex flex-col flex-1 min-w-0 space-y-7 h-full">
         
         {/* Header Section */}
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 pt-6">
@@ -563,10 +565,10 @@ const StudentList: React.FC<StudentListProps> = ({
         </div>
 
         {/* Table Container */}
-        <div className="bg-white rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-200/60 overflow-hidden print:overflow-visible print:shadow-none print:border-none">
-          <div className="overflow-x-auto print:overflow-visible">
+        <div className="flex-1 min-h-0 bg-white rounded-2xl shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] border border-gray-200/60 overflow-hidden print:overflow-visible print:shadow-none print:border-none flex flex-col">
+          <div className="flex-1 overflow-auto print:overflow-visible">
             <table className="min-w-[1200px] w-full divide-y divide-gray-100 print:min-w-0">
-              <thead>
+              <thead className="sticky top-0 z-20 shadow-sm">
                 <tr className="bg-[#1D1D1F] print:bg-white">
                   {!readOnly && (
                       <th scope="col" className="px-4 py-5 text-center w-10 print:hidden">
@@ -574,7 +576,7 @@ const StudentList: React.FC<StudentListProps> = ({
                             type="checkbox" 
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4"
                             onChange={handleSelectAll}
-                            checked={paginatedStudents.length > 0 && paginatedStudents.every(s => selectedIds.has(s.id))}
+                            checked={filteredStudents.length > 0 && filteredStudents.every(s => selectedIds.has(s.id))}
                           />
                       </th>
                   )}
@@ -601,6 +603,7 @@ const StudentList: React.FC<StudentListProps> = ({
                         {subj.name}
                     </th>
                   ))}
+                  <th scope="col" className="px-4 py-5 text-center text-xs font-bold text-white uppercase tracking-widest no-print">Lock</th>
                   <th scope="col" className="px-4 py-5 text-right text-xs font-bold text-white uppercase tracking-widest no-print">จัดการ</th>
                 </tr>
               </thead>
@@ -612,7 +615,7 @@ const StudentList: React.FC<StudentListProps> = ({
                    if (student.rank === 3) rankStyle = "bg-orange-100 text-orange-800 font-bold border border-orange-200 scale-105 print:bg-transparent print:border-none print:scale-100";
 
                    return (
-                  <tr key={`${student.id}-${index}`} onClick={() => handleRowClick(student)} className={`hover:bg-gray-50 transition-colors group cursor-pointer print:break-inside-avoid ${selectedIds.has(student.id) ? 'bg-blue-50/30' : ''}`}>
+                  <tr key={`${student.id}-${index}`} onClick={() => handleRowClick(student)} className={`hover:bg-gray-50 transition-colors group cursor-pointer print:break-inside-avoid ${selectedIds.has(student.id) ? 'bg-blue-50/30' : ''} ${student.isLocked ? 'locked-row-glow' : ''}`}>
                     {!readOnly && (
                         <td className="px-4 py-5 text-center print:hidden" onClick={(e) => e.stopPropagation()}>
                             <input 
@@ -705,6 +708,32 @@ const StudentList: React.FC<StudentListProps> = ({
                             {student.scores[subj.id] || 0}
                         </td>
                     ))}
+
+                    <td className="px-4 py-5 whitespace-nowrap text-center no-print" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-2">
+                            {!readOnly ? (
+                                <button
+                                    onClick={() => {
+                                        const updatedStudent = { ...student, isLocked: !student.isLocked };
+                                        onEditStudent(updatedStudent, student.id);
+                                    }}
+                                    className={`lock-toggle ${student.isLocked ? 'locked' : ''}`}
+                                    title={student.isLocked ? 'ปลดล็อค' : 'ล็อคที่นั่ง'}
+                                >
+                                    <span className="lock-toggle-bg"></span>
+                                    <span className="lock-toggle-knob"></span>
+                                </button>
+                            ) : (
+                                <div className={`lock-toggle ${student.isLocked ? 'locked' : ''} opacity-70 cursor-default`}>
+                                    <span className="lock-toggle-bg"></span>
+                                    <span className="lock-toggle-knob"></span>
+                                </div>
+                            )}
+                            {student.isLocked && (
+                                <span className="text-yellow-500 italic font-bold text-sm drop-shadow-sm animate-pulse">Lock!</span>
+                            )}
+                        </div>
+                    </td>
 
                     <td className="px-4 py-5 whitespace-nowrap text-right no-print">
                         {!readOnly ? (

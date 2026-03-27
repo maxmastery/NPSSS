@@ -112,6 +112,18 @@ export const rankStudents = (
   // --- SEAT ALLOCATION LOGIC ---
   let pool = [...allStudents];
 
+  // 0. Locked Students (Absolute Priority)
+  const lockedGroup = pool.filter(s => s.isLocked);
+  const unlockedGroup = pool.filter(s => !s.isLocked);
+
+  // Sort locked group by score
+  lockedGroup.sort((a, b) => compareByScore(a, b, subjects));
+  
+  // Assign seats
+  lockedGroup.forEach(s => tryAssignSeat(s));
+  
+  pool = unlockedGroup; // Remaining pool for next steps
+
   // 1. Quota Students (Highest Priority)
   if (enableQuota) {
       const quotaGroup = pool.filter(s => s.isQuota);
