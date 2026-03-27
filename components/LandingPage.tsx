@@ -114,7 +114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 />
             </div>
         </div>
-        <p className="text-[10px] text-gray-300 font-medium mt-1">Nongkipittayakom Student Selection System (NPSSS) V 2.0</p>
+        <p className="text-[10px] text-gray-300 font-medium mt-1">Nongkipittayakom Student Selection System (NPSSS) V 2.0.4</p>
       </footer>
 
       {/* Login Modal Overlay */}

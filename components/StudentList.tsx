@@ -45,6 +45,9 @@ const StudentList: React.FC<StudentListProps> = ({
 }) => {
   const [filterStream, setFilterStream] = useState<string | 'ALL'>('ALL');
   const [filterPreferred, setFilterPreferred] = useState<string | 'ALL'>('ALL');
+  const [filterQuota, setFilterQuota] = useState<string | 'ALL'>('ALL');
+  const [filterDistrict, setFilterDistrict] = useState<string | 'ALL'>('ALL');
+  const [filterLock, setFilterLock] = useState<string | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
@@ -79,7 +82,7 @@ const StudentList: React.FC<StudentListProps> = ({
   useEffect(() => {
     setCurrentPage(1);
     setSelectedIds(new Set());
-  }, [filterStream, filterPreferred, searchTerm, sortSubject, sortDirection]);
+  }, [filterStream, filterPreferred, filterQuota, filterDistrict, filterLock, searchTerm, sortSubject, sortDirection]);
 
   const filteredStudents = useMemo(() => {
     let result = students.filter(s => {
@@ -89,7 +92,16 @@ const StudentList: React.FC<StudentListProps> = ({
       // 2. Filter by Preferred Stream (Selection 1st Choice)
       const matchesPreferred = filterPreferred === 'ALL' || (s.preferredStreams && s.preferredStreams[0] === filterPreferred);
       
-      // 3. General Search
+      // 3. Filter by Quota
+      const matchesQuota = filterQuota === 'ALL' || (filterQuota === 'QUOTA' ? s.isQuota : !s.isQuota);
+
+      // 4. Filter by District
+      const matchesDistrict = filterDistrict === 'ALL' || (filterDistrict === 'IN_DISTRICT' ? s.residence === 'IN_DISTRICT' : s.residence !== 'IN_DISTRICT');
+
+      // 5. Filter by Lock
+      const matchesLock = filterLock === 'ALL' || (filterLock === 'LOCKED' ? s.isLocked : !s.isLocked);
+
+      // 6. General Search
       const searchLower = (searchTerm || '').toLowerCase();
       const fName = s.firstName || '';
       const lName = s.lastName || '';
@@ -100,10 +112,10 @@ const StudentList: React.FC<StudentListProps> = ({
         lName.toLowerCase().includes(searchLower) || 
         sId.toLowerCase().includes(searchLower);
         
-      return matchesQualified && matchesPreferred && matchesSearch;
+      return matchesQualified && matchesPreferred && matchesQuota && matchesDistrict && matchesLock && matchesSearch;
     });
 
-    // 4. Sorting
+    // 7. Sorting
     const isDesc = sortDirection === 'DESC';
 
     if (sortSubject !== 'TOTAL') {
@@ -121,7 +133,7 @@ const StudentList: React.FC<StudentListProps> = ({
     }
 
     return result;
-  }, [students, filterStream, filterPreferred, searchTerm, sortSubject, sortDirection]);
+  }, [students, filterStream, filterPreferred, filterQuota, filterDistrict, filterLock, searchTerm, sortSubject, sortDirection]);
 
   // --- PAGINATION ---
   const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
@@ -537,6 +549,49 @@ const StudentList: React.FC<StudentListProps> = ({
                       ))}
                   </select>
           </div>
+
+          {criteria?.enableQuota && (
+            <div className="relative flex-grow min-w-[150px]">
+                   <Filter className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-500 z-10" />
+                   <select
+                        value={filterQuota}
+                        onChange={(e) => setFilterQuota(e.target.value)}
+                        className="pl-10 pr-8 block w-full px-4 py-2.5 bg-gray-50 border-0 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all appearance-none font-bold"
+                    >
+                        <option value="ALL">โควต้า (ทั้งหมด)</option>
+                        <option value="QUOTA">โควต้า</option>
+                        <option value="NORMAL">ทั่วไป</option>
+                    </select>
+            </div>
+          )}
+
+          {criteria?.enableDistrictPriority && (
+            <div className="relative flex-grow min-w-[150px]">
+                   <Filter className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-500 z-10" />
+                   <select
+                        value={filterDistrict}
+                        onChange={(e) => setFilterDistrict(e.target.value)}
+                        className="pl-10 pr-8 block w-full px-4 py-2.5 bg-gray-50 border-0 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all appearance-none font-bold"
+                    >
+                        <option value="ALL">เขตพื้นที่ (ทั้งหมด)</option>
+                        <option value="IN_DISTRICT">ในเขตพื้นที่</option>
+                        <option value="OUT_DISTRICT">นอกเขตพื้นที่</option>
+                    </select>
+            </div>
+          )}
+
+          <div className="relative flex-grow min-w-[150px]">
+                 <Filter className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-500 z-10" />
+                 <select
+                      value={filterLock}
+                      onChange={(e) => setFilterLock(e.target.value)}
+                      className="pl-10 pr-8 block w-full px-4 py-2.5 bg-gray-50 border-0 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-all appearance-none font-bold"
+                  >
+                      <option value="ALL">สถานะ Lock (ทั้งหมด)</option>
+                      <option value="LOCKED">Lock</option>
+                      <option value="UNLOCKED">Unlock</option>
+                  </select>
+          </div>
           
           <div className="w-px h-8 bg-gray-200 mx-1 hidden lg:block"></div>
 
@@ -779,12 +834,24 @@ const StudentList: React.FC<StudentListProps> = ({
             </table>
         </div>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6 no-print">
-                <button
-                    type="button"
-                    onClick={() => goToPage(currentPage - 1)}
+        {/* Footer: Row Count and Pagination */}
+        <div className="flex flex-col md:flex-row justify-between items-center mt-6 no-print gap-4">
+            {/* Row Count */}
+            <div className="text-sm font-medium text-gray-500">
+                แสดงข้อมูล <span className="text-gray-900 font-bold">{filteredStudents.length}</span> รายการ
+                {filteredStudents.length !== students.length && (
+                    <span className="ml-1 text-gray-400">
+                        (จากทั้งหมด {students.length} รายการ)
+                    </span>
+                )}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
                     className="p-2.5 rounded-full hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-gray-600"
                 >
@@ -816,6 +883,7 @@ const StudentList: React.FC<StudentListProps> = ({
                 </button>
             </div>
         )}
+        </div>
 
         <div className="flex justify-end gap-3 mt-4 no-print">
             <button 

@@ -550,6 +550,30 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
             )}
           </div>
         </div>
+        
+        {/* Developer Credits Footer */}
+        <footer className="w-full text-center flex flex-col items-center justify-center py-6 mt-auto no-print">
+          <div className="flex items-center gap-2 group cursor-pointer">
+              <span className="text-[11px] text-gray-400 font-medium">พัฒนาโดย</span>
+              <a 
+                  href="https://thanitlab.framer.website/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[11px] text-gray-600 font-bold hover:text-black transition-colors tracking-wide"
+              >
+                  Thanit Lab
+              </a>
+              <div className="group-hover:scale-110 transition-transform">
+                  <img 
+                      src="https://drive.google.com/thumbnail?id=1C3Tfeq-p3IPzGIapncHjL4vuljkfNTzn" 
+                      alt="Thanit Lab Logo" 
+                      className="w-[20px] h-[20px] object-contain mix-blend-multiply"
+                      referrerPolicy="no-referrer"
+                  />
+              </div>
+          </div>
+          <p className="text-[10px] text-gray-300 font-medium mt-1">Nongkipittayakom Student Selection System (NPSSS) V 2.0.4</p>
+        </footer>
       </main>
       
       {/* Mobile Overlay */}
