@@ -193,6 +193,24 @@ const api = {
         throw new Error('Invalid response from server');
     }
     return result.user;
+  },
+
+  async sendEmoji(senderId: string, senderName: string, receiverId: string, emoji: string): Promise<void> {
+    try {
+      await sendPostRequest('sendEmoji', { senderId, senderName, receiverId, emoji });
+    } catch (error) {
+      console.error('API Error (sendEmoji):', error);
+    }
+  },
+
+  async getEmojis(userId: string): Promise<any[]> {
+    try {
+      const result = await sendPostRequest('getEmojis', { userId });
+      return Array.isArray(result?.data) ? result.data : [];
+    } catch (error) {
+      console.error('API Error (getEmojis):', error);
+      return [];
+    }
   }
 };
 

@@ -5,6 +5,7 @@ import { rankStudents } from '../services/rankingService';
 import StudentList from './StudentList';
 import Analysis from './Analysis';
 import SettingsPage from './SettingsPage';
+import OnlineUsers from './OnlineUsers';
 import { LayoutDashboard, LogOut, Menu, X, User, Settings, ArrowLeft, Shield, Loader2, Lock, Eye, CheckCircle, BarChart3, Database, AlertTriangle, RefreshCw, XCircle } from 'lucide-react';
 import api from '../services/api';
 import { storage } from '../services/storage';
@@ -152,6 +153,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
       // We also tell polling to ignore next check, because the server might technically correspond to THIS save
       // or take a second to reflect.
       ignoreNextPoll.current = true;
+      // Force a fresh fetch to ensure UI is perfectly in sync with backend
+      loadData();
   };
 
   const handleManualRefresh = () => {
@@ -182,6 +185,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('บันทึกข้อมูลไม่สำเร็จ');
+          loadData(); // Revert optimistic update
       } finally {
           setIsSyncing(false);
       }
@@ -207,6 +211,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('บันทึกการแก้ไขไม่สำเร็จ');
+          loadData(); // Revert optimistic update
       } finally {
           setIsSyncing(false);
       }
@@ -226,6 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('ลบข้อมูลไม่สำเร็จ');
+          loadData(); // Revert optimistic update
       } finally {
           setIsSyncing(false);
       }
@@ -244,8 +250,7 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           refreshTimestamp();
       } catch (e) {
           alert('ลบข้อมูลหลายรายการไม่สำเร็จ');
-          // Revert on error? Ideally yes, but for now simple alert.
-          loadData(); // Reload to sync
+          loadData(); // Revert optimistic update
       } finally {
           setIsSyncing(false);
       }
@@ -298,9 +303,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
           }
       } catch (e) {
           console.error("Failed to reset data", e);
-          // Revert optimistic update on error
-          setStudents(previousStudents);
           alert('เกิดข้อผิดพลาดในการลบข้อมูลจากฐานข้อมูล กรุณาลองใหม่อีกครั้ง');
+          loadData(); // Revert optimistic update
       } finally {
           setIsSyncing(false);
       }
@@ -555,6 +559,8 @@ const Dashboard: React.FC<DashboardProps> = ({ classroom, onBack, onLogout, curr
             onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
+      
+      {currentUser && <OnlineUsers currentUser={currentUser} />}
     </div>
   );
 };

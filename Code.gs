@@ -4,7 +4,8 @@ const SHEETS = {
   CLASSROOMS: 'DB_Classrooms',
   STUDENTS: 'DB_Students',
   SETTINGS: 'DB_Settings',
-  USERS: 'DB_Users' // NEW: Users Sheet
+  USERS: 'DB_Users', // NEW: Users Sheet
+  MESSAGES: 'DB_Messages' // NEW: Messages Sheet
 };
 
 // Helper to get the correct spreadsheet
@@ -18,6 +19,23 @@ function getDB(sheetId) {
     console.error('Error opening spreadsheet by ID, falling back to active:', e);
     return SpreadsheetApp.getActiveSpreadsheet();
   }
+}
+
+// Helper to normalize IDs (removes leading quote, trims spaces)
+function normalizeId(id) {
+  if (id === null || id === undefined) return '';
+  let s = String(id).trim();
+  if (s.startsWith("'")) s = s.substring(1);
+  return s;
+}
+
+// Helper to compare IDs robustly
+function isIdMatch(id1, id2) {
+  let s1 = normalizeId(id1);
+  let s2 = normalizeId(id2);
+  if (s1 === s2) return true;
+  if (!isNaN(s1) && !isNaN(s2) && Number(s1) === Number(s2)) return true;
+  return false;
 }
 
 function setup(sheetId) {
@@ -53,6 +71,11 @@ function setup(sheetId) {
     if (headers.length < 7) {
        sheet.getRange(1, 7).setValue('last_heartbeat');
     }
+  }
+
+  // NEW: Create Messages Sheet
+  if (!ss.getSheetByName(SHEETS.MESSAGES)) {
+    ss.insertSheet(SHEETS.MESSAGES).appendRow(['id', 'sender_id', 'sender_name', 'receiver_id', 'emoji', 'created_at', 'read']);
   }
 }
 
@@ -123,6 +146,10 @@ function handleRequest(e) {
       result = heartbeat(body, sheetId);
     } else if (action === 'getOnlineUsers') { // NEW
       result = getOnlineUsers(sheetId);
+    } else if (action === 'sendEmoji') {
+      result = sendEmoji(body, sheetId);
+    } else if (action === 'getEmojis') {
+      result = getEmojis(body, sheetId);
     }
 
     return ContentService.createTextOutput(JSON.stringify(result))
@@ -215,6 +242,64 @@ function getOnlineUsers(sheetId) {
     }
   }
   return { status: 'success', data: onlineUsers };
+}
+
+// NEW: Send Emoji
+function sendEmoji(payload, sheetId) {
+  const ss = getDB(sheetId);
+  let sheet = ss.getSheetByName(SHEETS.MESSAGES);
+  if (!sheet) {
+    setup(sheetId);
+    sheet = ss.getSheetByName(SHEETS.MESSAGES);
+  }
+  
+  const id = Utilities.getUuid();
+  const now = new Date().toISOString();
+  
+  sheet.appendRow([
+    id, 
+    payload.senderId, 
+    payload.senderName, 
+    payload.receiverId, 
+    payload.emoji, 
+    now, 
+    false
+  ]);
+  
+  return { status: 'success' };
+}
+
+// NEW: Get Unread Emojis
+function getEmojis(payload, sheetId) {
+  const ss = getDB(sheetId);
+  const sheet = ss.getSheetByName(SHEETS.MESSAGES);
+  if (!sheet) return { status: 'success', data: [] };
+
+  const userId = String(payload.userId).trim();
+  const data = sheet.getDataRange().getValues();
+  const emojis = [];
+  const rowsToUpdate = [];
+
+  for (let i = 1; i < data.length; i++) {
+    // Check receiver_id (col 4) and read status (col 7)
+    if (String(data[i][3]).trim() === userId && data[i][6] === false) {
+      emojis.push({
+        id: data[i][0],
+        senderId: data[i][1],
+        senderName: data[i][2],
+        emoji: data[i][4],
+        createdAt: data[i][5]
+      });
+      rowsToUpdate.push(i + 1);
+    }
+  }
+
+  // Mark as read
+  rowsToUpdate.forEach(row => {
+    sheet.getRange(row, 7).setValue(true);
+  });
+
+  return { status: 'success', data: emojis };
 }
 
 function saveUser(payload, sheetId) {
@@ -524,19 +609,23 @@ function saveStudent(payload, sheetId) {
   const data = sheet.getDataRange().getValues();
   const classroomId = String(payload.classroomId).trim();
   const student = payload.student;
-  const studentId = String(student.id).trim();
+  const studentId = normalizeId(student.id);
   const json = JSON.stringify(student);
   const now = new Date().toISOString();
   let found = false;
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() == classroomId && String(data[i][1]).trim() == studentId) {
+    if (String(data[i][0]).trim() == classroomId && isIdMatch(data[i][1], studentId)) {
       sheet.getRange(i + 1, 3).setValue(json);
       sheet.getRange(i + 1, 4).setValue(now);
       found = true;
+      Logger.log(`Updated row ${i + 1} for student ${studentId}`);
       break;
     }
   }
-  if (!found) sheet.appendRow([classroomId, studentId, json, now]);
+  if (!found) {
+    sheet.appendRow([classroomId, studentId, json, now]);
+    Logger.log(`Inserted new row for student ${studentId}`);
+  }
   updateClassroomTimestamp(classroomId, ss);
   return { status: 'success' };
 }
@@ -552,22 +641,29 @@ function saveStudents(payload, sheetId) {
   const indexMap = new Map();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() == classroomId) {
-      indexMap.set(String(data[i][1]).trim(), i);
+      indexMap.set(normalizeId(data[i][1]), i);
     }
   }
   const newRows = [];
   students.forEach(student => {
-     const studentId = String(student.id).trim();
+     const studentId = normalizeId(student.id);
      const json = JSON.stringify(student);
-     if (indexMap.has(studentId)) {
-        const rowIndex = indexMap.get(studentId);
+     
+     let rowIndex = indexMap.get(studentId);
+
+     if (rowIndex !== undefined && rowIndex !== -1) {
         sheet.getRange(rowIndex + 1, 3).setValue(json);
         sheet.getRange(rowIndex + 1, 4).setValue(now);
+        Logger.log(`Updated row ${rowIndex + 1} for student ${studentId}`);
      } else {
         newRows.push([classroomId, studentId, json, now]);
+        Logger.log(`Prepared insert for student ${studentId}`);
      }
   });
-  if (newRows.length > 0) sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 4).setValues(newRows);
+  if (newRows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, newRows.length, 4).setValues(newRows);
+    Logger.log(`Inserted ${newRows.length} new rows`);
+  }
   updateClassroomTimestamp(classroomId, ss);
   return { status: 'success', count: students.length };
 }
@@ -578,10 +674,11 @@ function deleteStudent(classroomId, studentId, sheetId) {
    if (!sheet) return { status: 'success' };
    const data = sheet.getDataRange().getValues();
    const cid = String(classroomId).trim();
-   const sid = String(studentId).trim();
+   const sid = normalizeId(studentId);
    for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() == cid && String(data[i][1]).trim() == sid) {
+    if (String(data[i][0]).trim() == cid && isIdMatch(data[i][1], sid)) {
       sheet.deleteRow(i + 1);
+      Logger.log(`Deleted row ${i + 1} for student ${sid}`);
       updateClassroomTimestamp(classroomId, ss);
       return { status: 'success' };
     }
@@ -595,24 +692,31 @@ function deleteStudents(classroomId, studentIds, sheetId) {
    if (!sheet) return { status: 'success' };
    
    const data = sheet.getDataRange().getValues();
+   if (data.length <= 1) return { status: 'success', deletedCount: 0 };
+
    const cid = String(classroomId).trim();
-   // Convert to Set for faster lookup
-   const idsToDelete = {};
-   studentIds.forEach(id => { idsToDelete[String(id).trim()] = true; });
+   const normalizedIdsToDelete = new Set(studentIds.map(id => normalizeId(id)));
    
-   // Delete from bottom up to maintain indices
+   const newData = [data[0]]; // Keep headers
    let deletedCount = 0;
-   for (let i = data.length - 1; i >= 1; i--) {
+   
+   for (let i = 1; i < data.length; i++) {
      const rowCid = String(data[i][0]).trim();
-     const rowSid = String(data[i][1]).trim();
+     const rowSid = normalizeId(data[i][1]);
      
-     if (rowCid === cid && idsToDelete[rowSid]) {
-       sheet.deleteRow(i + 1);
+     if (rowCid === cid && normalizedIdsToDelete.has(rowSid)) {
        deletedCount++;
+       Logger.log(`Deleted row ${i + 1} for student ${rowSid}`);
+     } else {
+       newData.push(data[i]);
      }
    }
    
    if (deletedCount > 0) {
+       sheet.clearContents();
+       if (newData.length > 0) {
+           sheet.getRange(1, 1, newData.length, newData[0].length).setValues(newData);
+       }
        updateClassroomTimestamp(classroomId, ss);
    }
    

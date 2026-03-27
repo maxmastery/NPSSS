@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { RankedStudent, Student, StudyPlan, ExamSubject, AdmissionCriteria } from '../types';
 import Button from './Button';
-import { Plus, Filter, Pencil, Trash2, Search, User, Users, X, Trophy, FileText, Download, ArrowUpDown, ArrowDown, ArrowUp, BarChart2, ChevronLeft, ChevronRight, RefreshCw, MapPin } from 'lucide-react';
+import { Plus, Filter, Pencil, Trash2, Search, User, Users, X, Trophy, FileText, Download, ArrowUpDown, ArrowDown, ArrowUp, BarChart2, ChevronLeft, ChevronRight, RefreshCw, MapPin, Loader2 } from 'lucide-react';
 import DataEntry, { EditStudentForm } from './DataEntry';
 import ExcelJS from 'exceljs';
 
@@ -48,6 +48,7 @@ const StudentList: React.FC<StudentListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Selection State
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -205,8 +206,10 @@ const StudentList: React.FC<StudentListProps> = ({
   };
 
   const handleExport = async () => {
-    const workbook = new ExcelJS.Workbook();
-    // ... (Same export logic as before) ...
+    setIsExporting(true);
+    try {
+        const workbook = new ExcelJS.Workbook();
+        // ... (Same export logic as before) ...
     const getStreamColor = (streamName: string) => {
         if (!streamName) return 'FF000000';
         if (streamName.includes('วิทย์-คณิต')) return 'FF0000FF';
@@ -364,6 +367,9 @@ const StudentList: React.FC<StudentListProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    } finally {
+        setIsExporting(false);
+    }
   };
 
   const getStreamBadgeStyle = (streamName: string) => {
@@ -482,7 +488,7 @@ const StudentList: React.FC<StudentListProps> = ({
                                 onClick={handleBulkDeleteClick}
                                 className="h-[60px] bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 text-white rounded-2xl px-6 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 text-base font-bold mt-2"
                             >
-                                <Trash2 className="h-5 w-5" /> ลบ {selectedIds.size} รายการ
+                                <Trash2 className="h-5 w-5" /> ลบ {filteredStudents.filter(s => selectedIds.has(s.id)).length} รายการ
                             </Button>
                         )}
                     </div>
@@ -579,31 +585,31 @@ const StudentList: React.FC<StudentListProps> = ({
                           />
                       </th>
                   )}
-                  <th scope="col" className="px-6 py-5 text-center text-xs font-bold text-white uppercase tracking-widest min-w-[110px] print:text-black print:border print:border-gray-300">อันดับที่</th>
-                  <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">เลขที่ผู้สมัคร</th>
-                  <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">ชื่อ - นามสกุล</th>
-                  <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">โรงเรียนเดิม</th>
+                  <th scope="col" className="px-4 py-3 text-center text-[13px] font-bold text-white uppercase tracking-widest min-w-[110px] print:text-black print:border print:border-gray-300">อันดับที่</th>
+                  <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">เลขที่ผู้สมัคร</th>
+                  <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">ชื่อ - นามสกุล</th>
+                  <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">โรงเรียนเดิม</th>
                   {!!criteria?.enableDistrictPriority && (
-                    <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">เขตพื้นที่</th>
+                    <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">เขตพื้นที่</th>
                   )}
                   {(criteria?.enableQuota) && (
-                    <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">โควตา</th>
+                    <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">โควตา</th>
                   )}
-                  <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">แผนฯ ที่เลือก</th>
-                  <th scope="col" className="px-6 py-5 text-left text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">แผนฯ ที่ได้</th>
-                  <th scope="col" className="px-4 py-5 text-center text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">
+                  <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">แผนฯ ที่เลือก</th>
+                  <th scope="col" className="px-4 py-3 text-left text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">แผนฯ ที่ได้</th>
+                  <th scope="col" className="px-3 py-3 text-center text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">
                       {sortSubject === 'TOTAL' ? 'คะแนนรวม' : `รวม`}
                   </th>
-                  <th scope="col" className="px-4 py-5 text-center text-xs font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">
+                  <th scope="col" className="px-3 py-3 text-center text-[13px] font-bold text-white uppercase tracking-widest print:text-black print:border print:border-gray-300">
                       คิดเป็น %
                   </th>
                   {subjects.map(subj => (
-                    <th key={subj.id} scope="col" className={`px-2 py-5 text-center text-xs font-bold uppercase tracking-widest w-14 print:text-black print:border print:border-gray-300 ${sortSubject === subj.id ? 'text-yellow-400 underline underline-offset-4' : 'text-white'}`}>
+                    <th key={subj.id} scope="col" className={`px-2 py-3 text-center text-[13px] font-bold uppercase tracking-widest w-14 print:text-black print:border print:border-gray-300 ${sortSubject === subj.id ? 'text-yellow-400 underline underline-offset-4' : 'text-white'}`}>
                         {subj.name}
                     </th>
                   ))}
-                  <th scope="col" className="px-4 py-5 text-center text-xs font-bold text-white uppercase tracking-widest no-print">Lock</th>
-                  <th scope="col" className="px-4 py-5 text-right text-xs font-bold text-white uppercase tracking-widest no-print">จัดการ</th>
+                  <th scope="col" className="px-3 py-3 text-center text-[13px] font-bold text-white uppercase tracking-widest no-print">Lock</th>
+                  <th scope="col" className="px-3 py-3 text-right text-[13px] font-bold text-white uppercase tracking-widest no-print">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-50">
@@ -616,7 +622,7 @@ const StudentList: React.FC<StudentListProps> = ({
                    return (
                   <tr key={`${student.id}-${index}`} onClick={() => handleRowClick(student)} className={`hover:bg-gray-50 transition-colors group cursor-pointer print:break-inside-avoid ${selectedIds.has(student.id) ? 'bg-blue-50/30' : ''} ${student.isLocked ? 'locked-row-glow' : ''}`}>
                     {!readOnly && (
-                        <td className="px-4 py-5 text-center print:hidden" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-3 text-center print:hidden" onClick={(e) => e.stopPropagation()}>
                             <input 
                                 type="checkbox" 
                                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4"
@@ -625,77 +631,77 @@ const StudentList: React.FC<StudentListProps> = ({
                             />
                         </td>
                     )}
-                    <td className="px-6 py-5 whitespace-nowrap text-center print:border print:border-gray-300">
-                       <div className={`inline-flex items-center justify-center w-11 h-11 rounded-full text-lg ${rankStyle}`}>
+                    <td className="px-4 py-3 whitespace-nowrap text-center print:border print:border-gray-300">
+                       <div className={`inline-flex items-center justify-center w-9 h-9 rounded-full text-base ${rankStyle}`}>
                         {student.rank}
                        </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-base font-medium text-gray-500 font-mono tracking-wide print:border print:border-gray-300 print:text-black">{student.id}</td>
-                    <td className="px-6 py-5 whitespace-nowrap print:border print:border-gray-300">
-                      <div className="text-base font-semibold text-gray-900 print:text-black">
+                    <td className="px-4 py-3 whitespace-nowrap text-[13px] font-medium text-gray-500 font-mono tracking-wide print:border print:border-gray-300 print:text-black">{student.id}</td>
+                    <td className="px-4 py-3 whitespace-nowrap print:border print:border-gray-300">
+                      <div className="text-[13px] font-semibold text-gray-900 print:text-black">
                         <span className="text-gray-400 font-normal mr-1 print:text-black">{student.title}</span>
                         {student.firstName} {student.lastName}
                       </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600 print:border print:border-gray-300 print:text-black">
+                    <td className="px-4 py-3 whitespace-nowrap text-[13px] text-gray-600 print:border print:border-gray-300 print:text-black">
                       {student.previousSchool || '-'}
                     </td>
                     {/* Residence Column */}
                     {!!criteria?.enableDistrictPriority && (
-                        <td className="px-6 py-5 whitespace-nowrap print:border print:border-gray-300">
+                        <td className="px-4 py-3 whitespace-nowrap print:border print:border-gray-300">
                         {student.residence === 'IN_DISTRICT' ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-purple-100 text-purple-700">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-100 text-purple-700">
                             <MapPin className="w-3 h-3 mr-1" /> ในเขต
                             </span>
                         ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-gray-100 text-gray-500">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-gray-100 text-gray-500">
                             นอกเขต
                             </span>
                         )}
                         </td>
                     )}
                     {(criteria?.enableQuota) && (
-                        <td className="px-6 py-5 whitespace-nowrap print:border print:border-gray-300">
+                        <td className="px-4 py-3 whitespace-nowrap print:border print:border-gray-300">
                             {student.isQuota ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-pink-100 text-pink-700">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-pink-100 text-pink-700">
                                     โควตา
                                 </span>
                             ) : (
-                                <span className="text-gray-400 text-sm">-</span>
+                                <span className="text-gray-400 text-[13px]">-</span>
                             )}
                         </td>
                     )}
-                    <td className="px-6 py-5 whitespace-nowrap print:border print:border-gray-300">
+                    <td className="px-4 py-3 whitespace-nowrap print:border print:border-gray-300">
                         <div className="flex flex-col items-start gap-1">
                             {student.preferredStreams && student.preferredStreams.length > 0 ? (
                                 <>
-                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium border print:border-none print:bg-transparent print:p-0 print:text-black ${getStreamBadgeStyle(student.preferredStreams[0])}`}>
+                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[13px] font-medium border print:border-none print:bg-transparent print:p-0 print:text-black ${getStreamBadgeStyle(student.preferredStreams[0])}`}>
                                         1. {student.preferredStreams[0]}
                                     </span>
                                 </>
                             ) : (
-                                <span className="text-gray-400 text-sm">-</span>
+                                <span className="text-gray-400 text-[13px]">-</span>
                             )}
                         </div>
                     </td>
-                    <td className="px-6 py-5 whitespace-nowrap print:border print:border-gray-300">
+                    <td className="px-4 py-3 whitespace-nowrap print:border print:border-gray-300">
                       {student.qualifiedStream ? (
                            <div className="flex items-center">
-                             <div className="h-2 w-2 rounded-full bg-emerald-500 mr-2 print:hidden"></div>
-                             <span className="text-base font-bold text-gray-900 print:text-black">{student.qualifiedStream}</span>
+                             <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 mr-2 print:hidden"></div>
+                             <span className="text-[13px] font-bold text-gray-900 print:text-black">{student.qualifiedStream}</span>
                            </div>
                       ) : (
                            <div className="flex items-center">
-                             <div className="h-2 w-2 rounded-full bg-red-400 mr-2 print:hidden"></div>
-                             <span className="text-sm font-medium text-red-600 print:text-black">รอเรียก</span>
+                             <div className="h-1.5 w-1.5 rounded-full bg-red-400 mr-2 print:hidden"></div>
+                             <span className="text-[13px] font-medium text-red-600 print:text-black">รอเรียก</span>
                            </div>
                       )}
                     </td>
-                    <td className="px-4 py-5 whitespace-nowrap text-center print:border print:border-gray-300">
-                        <span className="text-base font-bold text-gray-900 print:text-black">{student.totalScore}</span>
+                    <td className="px-3 py-3 whitespace-nowrap text-center print:border print:border-gray-300">
+                        <span className="text-[13px] font-bold text-gray-900 print:text-black">{student.totalScore}</span>
                     </td>
-                    <td className="px-4 py-5 whitespace-nowrap text-center print:border print:border-gray-300">
-                        <span className="text-base font-bold text-gray-900 print:text-black">
+                    <td className="px-3 py-3 whitespace-nowrap text-center print:border print:border-gray-300">
+                        <span className="text-[13px] font-bold text-gray-900 print:text-black">
                              {totalMaxScore > 0 
                                 ? ((student.totalScore / totalMaxScore) * 100).toFixed(2)
                                 : '0.00'}%
@@ -703,12 +709,12 @@ const StudentList: React.FC<StudentListProps> = ({
                     </td>
                     
                     {subjects.map(subj => (
-                        <td key={subj.id} className={`px-2 py-5 whitespace-nowrap text-center text-sm print:border print:border-gray-300 print:text-black ${sortSubject === subj.id ? 'font-bold text-blue-600 bg-blue-50/50 print:bg-transparent print:text-black' : 'text-gray-500'}`}>
+                        <td key={subj.id} className={`px-2 py-3 whitespace-nowrap text-center text-[13px] print:border print:border-gray-300 print:text-black ${sortSubject === subj.id ? 'font-bold text-blue-600 bg-blue-50/50 print:bg-transparent print:text-black' : 'text-gray-500'}`}>
                             {student.scores[subj.id] || 0}
                         </td>
                     ))}
 
-                    <td className="px-4 py-5 whitespace-nowrap text-center no-print" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-3 py-3 whitespace-nowrap text-center no-print" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-2">
                             {!readOnly ? (
                                 <button
@@ -734,7 +740,7 @@ const StudentList: React.FC<StudentListProps> = ({
                         </div>
                     </td>
 
-                    <td className="px-4 py-5 whitespace-nowrap text-right no-print">
+                    <td className="px-3 py-3 whitespace-nowrap text-right no-print">
                         {!readOnly ? (
                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
@@ -815,10 +821,12 @@ const StudentList: React.FC<StudentListProps> = ({
             <button 
                 type="button"
                 onClick={handleExport}
-                className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold text-base shadow-sm transition-all whitespace-nowrap active:scale-95 shadow-red-200 cursor-pointer z-10"
+                disabled={isExporting}
+                className={`flex items-center justify-center gap-2 ${isExporting ? 'bg-red-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 active:scale-95 cursor-pointer'} text-white px-6 py-3 rounded-xl font-bold text-base shadow-sm transition-all whitespace-nowrap shadow-red-200 z-10`}
                 title="ส่งออกข้อมูลเป็นไฟล์ Excel (.xlsx)"
             >
-                <Download className="w-5 h-5" /> ดาวน์โหลดไฟล์ Excel
+                {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                {isExporting ? 'กำลังดาวน์โหลด...' : 'ดาวน์โหลดไฟล์ Excel'}
             </button>
         </div>
       </div>
@@ -884,7 +892,7 @@ const StudentList: React.FC<StudentListProps> = ({
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">ยืนยันการลบหมู่?</h3>
                 <p className="text-gray-500 mb-6 text-sm">
-                    คุณต้องการลบข้อมูลนักเรียนจำนวน <span className="font-bold text-gray-900">{selectedIds.size}</span> รายการ ใช่หรือไม่?
+                    คุณต้องการลบข้อมูลนักเรียนจำนวน <span className="font-bold text-gray-900">{filteredStudents.filter(s => selectedIds.has(s.id)).length}</span> รายการ ใช่หรือไม่?
                 </p>
                 
                 <div className="mb-6">
