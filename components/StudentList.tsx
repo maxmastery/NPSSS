@@ -49,6 +49,7 @@ const StudentList: React.FC<StudentListProps> = ({
   const [filterDistrict, setFilterDistrict] = useState<string | 'ALL'>('ALL');
   const [filterLock, setFilterLock] = useState<string | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -439,7 +440,26 @@ const StudentList: React.FC<StudentListProps> = ({
             </div>
             
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 no-print">
-                 <div className="bg-white px-5 py-2.5 rounded-2xl border border-gray-200/60 shadow-sm flex items-center justify-between sm:justify-start gap-6 h-[60px]">
+                 {/* Filter Toggle Button */}
+                 <button
+                     onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                     className={`h-[60px] px-6 rounded-2xl border shadow-sm flex items-center justify-center gap-3 transition-all font-bold text-base ${
+                         isFilterExpanded 
+                         ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-blue-100' 
+                         : 'bg-white border-gray-200/60 text-gray-700 hover:bg-gray-50'
+                     }`}
+                 >
+                     <Filter className={`w-5 h-5 ${isFilterExpanded ? 'text-blue-600' : 'text-gray-500'}`} />
+                     <span>ตัวกรองข้อมูล</span>
+                     {(filterStream !== 'ALL' || filterPreferred !== 'ALL' || filterQuota !== 'ALL' || filterDistrict !== 'ALL' || filterLock !== 'ALL' || searchTerm !== '' || sortSubject !== 'TOTAL') && (
+                         <span className="flex h-2.5 w-2.5 relative ml-1">
+                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+                         </span>
+                     )}
+                 </button>
+
+                 <div className="bg-white px-5 py-2.5 rounded-2xl border border-gray-200/60 shadow-sm flex items-center justify-between sm:justify-start gap-6 h-[60px] flex-grow sm:flex-grow-0">
                       <div className="flex items-center gap-3">
                            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
                               <Users className="w-5 h-5" />
@@ -472,7 +492,7 @@ const StudentList: React.FC<StudentListProps> = ({
                  </div>
 
                  {!readOnly && (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end sm:ml-auto">
                         <div className="text-[10px] font-bold text-gray-400 mb-1.5 flex items-center gap-1">
                             <span>Last update:</span>
                             <span className="text-gray-600">{formatUpdateDate(updatedAt)}</span>
@@ -508,8 +528,14 @@ const StudentList: React.FC<StudentListProps> = ({
             </div>
         </div>
 
-        {/* Filter Bar (Updated Single Line) */}
-        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200/60 flex flex-wrap gap-2 items-center no-print">
+        {/* Filter Bar (Collapsible) */}
+        <div 
+            className={`grid transition-all duration-300 ease-in-out no-print ${
+                isFilterExpanded ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0 mt-0'
+            }`}
+        >
+            <div className="overflow-hidden">
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200/60 flex flex-wrap gap-3 items-center">
           
           <div className="relative flex-grow min-w-[200px]">
                 <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-gray-400" />
@@ -623,6 +649,8 @@ const StudentList: React.FC<StudentListProps> = ({
                   </select>
           </div>
 
+                </div>
+            </div>
         </div>
 
         {/* Table Container */}
